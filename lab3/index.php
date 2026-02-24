@@ -251,10 +251,7 @@ require_once 'form_handler.php';
                         foreach ($languages as $lang):
                         ?>
                             <option value="<?php echo $lang; ?>" 
-                                <?php echo in_a
-
-
-rray($lang, $selected_languages) ? 'selected' : ''; ?>>
+                                <?php echo in_array($lang, $selected_languages) ? 'selected' : ''; ?>>
                                 <?php echo $lang; ?>
                             </option>
                         <?php endforeach; ?>
