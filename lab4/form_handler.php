@@ -4,7 +4,7 @@ session_start();
 // Настройки подключения к БД
 $host = 'localhost';
 $dbname = 'u82378';
-$username = 'root';
+$username = 'u82378';
 $password = '5427077';
 
 $success_message = null;
