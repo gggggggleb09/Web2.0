@@ -15,7 +15,7 @@ $form_data = [];
 
 function generateLogin($full_name) {
     $base = preg_replace('/[^a-zA-Zа-яА-Я]/u', '', $full_name);
-    $base = mb_substr($base, 0, 10);
+    $base = substr($base, 0, 10);
     $random = rand(100, 999);
     return strtolower($base . $random);
 }
@@ -128,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
     } elseif (!preg_match("/^[А-Яа-яЁёA-Za-z\s-]+$/u", $form_data['full_name'])) {
         $errors[] = "ФИО может содержать только буквы, пробелы и дефисы";
         $field_errors['full_name'] = "Используйте только буквы, пробелы и дефисы";
-    } elseif (mb_strlen($form_data['full_name']) > 150) {
+    } elseif (strlen($form_data['full_name']) > 150) {
         $errors[] = "ФИО не должно превышать 150 символов";
         $field_errors['full_name'] = "Максимальная длина 150 символов";
     }
