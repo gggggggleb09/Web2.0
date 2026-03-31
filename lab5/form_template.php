@@ -55,4 +55,52 @@
             <label for="female">Женский</label>
             
             <input type="radio" id="other" name="gender" value="other"
-                   <?php echo (isset($form_data
+                   <?php echo (isset($form_data['gender']) && $form_data['gender'] == 'other') ? 'checked' : ''; ?> required>
+            <label for="other">Другой</label>
+        </div>
+        <?php if (isset($field_errors['gender'])): ?>
+            <span class="error-message"><?php echo htmlspecialchars($field_errors['gender']); ?></span>
+        <?php endif; ?>
+    </div>
+    
+    <div class="form-group <?php echo isset($field_errors['languages']) ? 'error-group' : ''; ?>">
+        <label for="languages">Любимые языки программирования * (можно выбрать несколько)</label>
+        <select id="languages" name="languages[]" multiple required>
+            <?php
+            $languages_list = ['Pascal', 'C', 'C++', 'JavaScript', 'PHP', 'Python', 'Java', 'Haskell', 'Clojure', 'Prolog', 'Scala', 'Go'];
+            $selected_languages = isset($form_data['languages']) ? $form_data['languages'] : [];
+            foreach ($languages_list as $lang):
+            ?>
+                <option value="<?php echo $lang; ?>" 
+                    <?php echo (is_array($selected_languages) && in_array($lang, $selected_languages)) ? 'selected' : ''; ?>>
+                    <?php echo $lang; ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        <?php if (isset($field_errors['languages'])): ?>
+            <span class="error-message"><?php echo htmlspecialchars($field_errors['languages']); ?></span>
+        <?php endif; ?>
+    </div>
+    
+    <div class="form-group <?php echo isset($field_errors['bio']) ? 'error-group' : ''; ?>">
+        <label for="bio">Биография</label>
+        <textarea id="bio" name="bio" placeholder="Расскажите о себе..."><?php echo isset($form_data['bio']) ? htmlspecialchars($form_data['bio']) : ''; ?></textarea>
+        <span class="field-hint">Буквы, цифры, пробелы и знаки препинания</span>
+        <?php if (isset($field_errors['bio'])): ?>
+            <span class="error-message"><?php echo htmlspecialchars($field_errors['bio']); ?></span>
+        <?php endif; ?>
+    </div>
+    
+    <div class="form-group">
+        <div class="checkbox-group <?php echo isset($field_errors['contract']) ? 'error-group' : ''; ?>">
+            <input type="checkbox" id="contract" name="contract" value="1" required
+                   <?php echo isset($form_data['contract']) && $form_data['contract'] ? 'checked' : ''; ?>>
+            <label for="contract">Я ознакомлен(а) с контрактом *</label>
+        </div>
+        <?php if (isset($field_errors['contract'])): ?>
+            <span class="error-message"><?php echo htmlspecialchars($field_errors['contract']); ?></span>
+        <?php endif; ?>
+    </div>
+    
+    <button type="submit" name="submit" class="btn-submit">Сохранить</button>
+</form>
