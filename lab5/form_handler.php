@@ -295,7 +295,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
             ];
             
             setcookie('saved_form_data', json_encode($cookies_data), time() + 365*24*60*60, '/');
-и
+
             if (!$is_update) {
                 $form_data = [];
             }
