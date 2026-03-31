@@ -5,7 +5,7 @@ session_start();
 $host = 'localhost';
 $dbname = 'u82378';
 $username = 'root';
-$password = '';
+$password = '5427077';
 
 $success_message = null;
 
