@@ -1,23 +1,66 @@
 <?php
 // Файл: admin.php
 
-// Настройки авторизации
-$valid_username = 'admin';
-$valid_password = 'admin123';
+session_start();
 
-// Проверяем, отправлены ли данные авторизации
-if (!isset($_SERVER['PHP_AUTH_USER']) || !isset($_SERVER['PHP_AUTH_PW']) ||
-    $_SERVER['PHP_AUTH_USER'] != $valid_username || $_SERVER['PHP_AUTH_PW'] != $valid_password) {
+// Настройки подключения к БД
+$host = 'localhost';
+$dbname = 'u82378';
+$username = 'u82378';
+$password = '5427077';
+
+// Функция проверки авторизации
+function isAdmin($pdo, $login, $password) {
+    $stmt = $pdo->prepare("SELECT id, login, password_hash, role FROM users WHERE login = :login AND role = 'admin'");
+    $stmt->execute([':login' => $login]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
     
+    if ($user && password_verify($password, $user['password_hash'])) {
+        return $user;
+    }
+    return false;
+}
+
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    die("Ошибка подключения к базе данных: " . $e->getMessage());
+}
+
+// Проверяем, есть ли уже сессия администратора
+$is_authenticated = isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true;
+
+// Если нет сессии, проверяем HTTP-авторизацию
+if (!$is_authenticated) {
+    // Проверяем, отправлены ли данные HTTP-авторизации
+    if (isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW'])) {
+        $user = $_SERVER['PHP_AUTH_USER'];
+        $pass = $_SERVER['PHP_AUTH_PW'];
+        
+        $admin_data = isAdmin($pdo, $user, $pass);
+        
+        if ($admin_data) {
+            // Авторизация успешна - создаем сессию
+            $_SESSION['admin_logged_in'] = true;
+            $_SESSION['admin_id'] = $admin_data['id'];
+            $_SESSION['admin_login'] = $admin_data['login'];
+            $is_authenticated = true;
+        }
+    }
+}
+
+// Если не авторизован - показываем окно входа
+if (!$is_authenticated) {
     // Отправляем заголовки для запроса авторизации
     header('HTTP/1.1 401 Unauthorized');
-    header('WWW-Authenticate: Basic realm="Admin Panel"');
+    header('WWW-Authenticate: Basic realm="Admin Panel - Only for administrators"');
     
     // Выводим сообщение об ошибке
     echo '<!DOCTYPE html>
     <html>
     <head>
-        <title>Требуется авторизация</title>
+        <title>Требуется авторизация администратора</title>
         <meta charset="UTF-8">
         <style>
             body {
@@ -28,31 +71,52 @@ if (!isset($_SERVER['PHP_AUTH_USER']) || !isset($_SERVER['PHP_AUTH_PW']) ||
                 color: white;
             }
             .error {
-                background: rgba(255,255,255,0.9);
+                background: rgba(255,255,255,0.95);
                 color: #333;
-                padding: 20px;
-                border-radius: 10px;
+                padding: 30px;
+                border-radius: 15px;
                 display: inline-block;
+                max-width: 500px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             }
             .error h2 { margin-top: 0; color: #dc3545; }
-            .error p { margin: 10px 0; }
+            .error p { margin: 15px 0; }
             .error code {
                 background: #f4f4f4;
-                padding: 5px 10px;
+                padding: 8px 15px;
                 border-radius: 5px;
                 display: inline-block;
                 margin: 5px;
+                font-size: 1.1em;
+            }
+            .error .note {
+                font-size: 0.85em;
+                color: #666;
+                margin-top: 20px;
+                padding-top: 15px;
+                border-top: 1px solid #ddd;
+            }
+            .btn {
+                display: inline-block;
+                background: #667eea;
+                color: white;
+                padding: 10px 20px;
+                text-decoration: none;
+                border-radius: 5px;
+                margin-top: 15px;
             }
         </style>
     </head>
     <body>
         <div class="error">
-            <h2>🔐 Требуется авторизация</h2>
-            <p>Для доступа к панели администратора введите логин и пароль.</p>
+            <h2>🔐 Доступ только для администраторов</h2>
+            <p>Для доступа к панели администратора необходимо иметь учетную запись с правами администратора.</p>
             <p><strong>Логин:</strong> <code>admin</code></p>
             <p><strong>Пароль:</strong> <code>admin123</code></p>
-            <p><small>Если окно авторизации не появилось, проверьте настройки браузера.</small></p>
-            <p><a href="admin.php" style="color: #667eea;">↻ Попробовать снова</a></p>
+            <div class="note">
+                <small>Если вы администратор и не можете войти, обратитесь к техническому специалисту.</small>
+            </div>
+            <a href="admin.php" class="btn">↻ Попробовать снова</a>
         </div>
     </body>
     </html>';
@@ -60,27 +124,25 @@ if (!isset($_SERVER['PHP_AUTH_USER']) || !isset($_SERVER['PHP_AUTH_PW']) ||
 }
 
 // Если авторизация прошла успешно, продолжаем работу
-session_start();
-
-// Настройки подключения к БД
-$host = 'localhost';
-$dbname = 'u82378';
-$username = 'u82378';
-$password = '5427077';
-
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("Ошибка подключения к базе данных: " . $e->getMessage());
-}
 
 // Обработка действий
 $action = $_GET['action'] ?? '';
 $user_id = $_GET['id'] ?? 0;
 
+// Выход из админ-панели
+if ($action === 'logout') {
+    session_destroy();
+    header('Location: admin.php');
+    exit;
+}
+
 // Удаление пользователя
 if ($action === 'delete' && $user_id) {
+    // Не даем удалить самого себя
+    if ($user_id == $_SESSION['admin_id']) {
+        header('Location: admin.php?message=cant_delete_self');
+        exit;
+    }
     $stmt = $pdo->prepare("DELETE FROM users WHERE id = :id");
     $stmt->execute([':id' => $user_id]);
     header('Location: admin.php?message=deleted');
@@ -160,7 +222,7 @@ $stmt = $pdo->prepare("
 $stmt->execute();
 $language_stats = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Получение всех пользователей
+// Получение всех пользователей (исключая администраторов, если нужно)
 $stmt = $pdo->prepare("
     SELECT u.*, 
            GROUP_CONCAT(pl.language_name SEPARATOR ', ') as languages
@@ -232,6 +294,15 @@ $all_languages = ['Pascal', 'C', 'C++', 'JavaScript', 'PHP', 'Python', 'Java', '
             font-weight: bold;
         }
 
+        .admin-info a {
+            color: white;
+            text-decoration: none;
+        }
+
+        .admin-info a:hover {
+            text-decoration: underline;
+        }
+
         .stats {
             background: rgba(255,255,255,0.2);
             padding: 10px 20px;
@@ -257,6 +328,12 @@ $all_languages = ['Pascal', 'C', 'C++', 'JavaScript', 'PHP', 'Python', 'Java', '
             background-color: #d4edda;
             color: #155724;
             border: 1px solid #c3e6cb;
+        }
+
+        .message-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
         }
 
         .stats-grid {
@@ -316,7 +393,7 @@ $all_languages = ['Pascal', 'C', 'C++', 'JavaScript', 'PHP', 'Python', 'Java', '
             gap: 10px;
         }
 
-        .btn-edit, .btn-delete, .btn-back, .btn-save {
+        .btn-edit, .btn-delete, .btn-back, .btn-save, .btn-logout {
             padding: 6px 12px;
             border: none;
             border-radius: 5px;
@@ -407,19 +484,21 @@ $all_languages = ['Pascal', 'C', 'C++', 'JavaScript', 'PHP', 'Python', 'Java', '
                     Всего пользователей: <span><?php echo count($users); ?></span>
                 </div>
                 <div class="admin-info">
-                    👤 Администратор
+                    👤 <?php echo htmlspecialchars($_SESSION['admin_login'] ?? 'Admin'); ?>
+                    <a href="?action=logout" class="btn-logout">🚪 Выйти</a>
                 </div>
             </div>
         </div>
         
         <div class="content">
             <?php if (isset($_GET['message'])): ?>
-                <div class="message message-success">
-                    <?php 
-                        if ($_GET['message'] === 'deleted') echo "✅ Пользователь успешно удален!";
-                        if ($_GET['message'] === 'updated') echo "✅ Данные пользователя успешно обновлены!";
-                    ?>
-                </div>
+                <?php if ($_GET['message'] === 'deleted'): ?>
+                    <div class="message message-success">✅ Пользователь успешно удален!</div>
+                <?php elseif ($_GET['message'] === 'updated'): ?>
+                    <div class="message message-success">✅ Данные пользователя успешно обновлены!</div>
+                <?php elseif ($_GET['message'] === 'cant_delete_self'): ?>
+                    <div class="message message-error">⚠️ Вы не можете удалить самого себя!</div>
+                <?php endif; ?>
             <?php endif; ?>
             
             <!-- Статистика по языкам -->
@@ -535,9 +614,13 @@ $all_languages = ['Pascal', 'C', 'C++', 'JavaScript', 'PHP', 'Python', 'Java', '
                                 <td><?php echo date('d.m.Y H:i', strtotime($user['created_at'])); ?></td>
                                 <td class="actions">
                                     <a href="?action=edit&id=<?php echo $user['id']; ?>" class="btn-edit">✏️ Ред.</a>
-                                    <a href="?action=delete&id=<?php echo $user['id']; ?>" 
-                                       class="btn-delete" 
-                                       onclick="return confirm('Вы уверены, что хотите удалить этого пользователя?')">🗑️ Удалить</a>
+                                    <?php if ($user['id'] != $_SESSION['admin_id']): ?>
+                                        <a href="?action=delete&id=<?php echo $user['id']; ?>" 
+                                           class="btn-delete" 
+                                           onclick="return confirm('Вы уверены, что хотите удалить этого пользователя?')">🗑️ Удалить</a>
+                                    <?php else: ?>
+                                        <span style="color: #999; font-size: 0.85em;">(Вы)</span>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
