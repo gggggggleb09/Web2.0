@@ -1,4 +1,5 @@
 <?php
+require_once 'security.php';
 require_once 'form_handler.php';
 ?>
 <!DOCTYPE html>
