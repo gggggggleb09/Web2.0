@@ -1,15 +1,12 @@
 <?php
-// Файл: admin.php
 
 session_start();
 
-// Настройки подключения к БД
 $host = 'localhost';
 $dbname = 'u82378';
 $username = 'u82378';
 $password = '5427077';
 
-// Функция проверки авторизации
 function isAdmin($pdo, $login, $password) {
     $stmt = $pdo->prepare("SELECT id, login, password_hash, role FROM users WHERE login = :login AND role = 'admin'");
     $stmt->execute([':login' => $login]);
@@ -28,12 +25,9 @@ try {
     die("Ошибка подключения к базе данных: " . $e->getMessage());
 }
 
-// Проверяем, есть ли уже сессия администратора
 $is_authenticated = isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true;
 
-// Если нет сессии, проверяем HTTP-авторизацию
 if (!$is_authenticated) {
-    // Проверяем, отправлены ли данные HTTP-авторизации
     if (isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW'])) {
         $user = $_SERVER['PHP_AUTH_USER'];
         $pass = $_SERVER['PHP_AUTH_PW'];
@@ -41,7 +35,6 @@ if (!$is_authenticated) {
         $admin_data = isAdmin($pdo, $user, $pass);
         
         if ($admin_data) {
-            // Авторизация успешна - создаем сессию
             $_SESSION['admin_logged_in'] = true;
             $_SESSION['admin_id'] = $admin_data['id'];
             $_SESSION['admin_login'] = $admin_data['login'];
@@ -49,14 +42,10 @@ if (!$is_authenticated) {
         }
     }
 }
-
-// Если не авторизован - показываем окно входа
 if (!$is_authenticated) {
-    // Отправляем заголовки для запроса авторизации
     header('HTTP/1.1 401 Unauthorized');
     header('WWW-Authenticate: Basic realm="Admin Panel - Only for administrators"');
-    
-    // Выводим сообщение об ошибке
+
     echo '<!DOCTYPE html>
     <html>
     <head>
@@ -123,22 +112,16 @@ if (!$is_authenticated) {
     exit;
 }
 
-// Если авторизация прошла успешно, продолжаем работу
-
-// Обработка действий
 $action = $_GET['action'] ?? '';
 $user_id = $_GET['id'] ?? 0;
 
-// Выход из админ-панели
 if ($action === 'logout') {
     session_destroy();
     header('Location: admin.php');
     exit;
 }
 
-// Удаление пользователя
 if ($action === 'delete' && $user_id) {
-    // Не даем удалить самого себя
     if ($user_id == $_SESSION['admin_id']) {
         header('Location: admin.php?message=cant_delete_self');
         exit;
@@ -149,7 +132,6 @@ if ($action === 'delete' && $user_id) {
     exit;
 }
 
-// Обновление пользователя
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_user'])) {
     $update_id = $_POST['user_id'];
     
@@ -170,7 +152,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_user'])) {
         ':id' => $update_id
     ]);
     
-    // Обновляем языки
     $languages = $_POST['languages'] ?? [];
     $stmt = $pdo->prepare("DELETE FROM user_languages WHERE user_id = :user_id");
     $stmt->execute([':user_id' => $update_id]);
@@ -191,7 +172,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_user'])) {
     exit;
 }
 
-// Получение данных для редактирования
 $edit_user = null;
 $user_languages = [];
 if ($action === 'edit' && $user_id) {
@@ -211,7 +191,6 @@ if ($action === 'edit' && $user_id) {
     }
 }
 
-// Получение статистики по языкам
 $stmt = $pdo->prepare("
     SELECT pl.language_name, COUNT(ul.user_id) as count 
     FROM programming_languages pl
@@ -222,7 +201,6 @@ $stmt = $pdo->prepare("
 $stmt->execute();
 $language_stats = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Получение всех пользователей (исключая администраторов, если нужно)
 $stmt = $pdo->prepare("
     SELECT u.*, 
            GROUP_CONCAT(pl.language_name SEPARATOR ', ') as languages
@@ -500,8 +478,7 @@ $all_languages = ['Pascal', 'C', 'C++', 'JavaScript', 'PHP', 'Python', 'Java', '
                     <div class="message message-error">⚠️ Вы не можете удалить самого себя!</div>
                 <?php endif; ?>
             <?php endif; ?>
-            
-            <!-- Статистика по языкам -->
+        
             <h2>📊 Статистика по языкам программирования</h2>
             <div class="stats-grid">
                 <?php foreach ($language_stats as $stat): ?>
@@ -511,8 +488,7 @@ $all_languages = ['Pascal', 'C', 'C++', 'JavaScript', 'PHP', 'Python', 'Java', '
                     </div>
                 <?php endforeach; ?>
             </div>
-            
-            <!-- Форма редактирования -->
+       
             <?php if ($edit_user): ?>
                 <div class="edit-form">
                     <h2>✏️ Редактирование пользователя #<?php echo $edit_user['id']; ?></h2>
@@ -578,8 +554,7 @@ $all_languages = ['Pascal', 'C', 'C++', 'JavaScript', 'PHP', 'Python', 'Java', '
                     </form>
                 </div>
             <?php endif; ?>
-            
-            <!-- Таблица пользователей -->
+ 
             <h2>📋 Список пользователей</h2>
             <div style="overflow-x: auto;">
                 <table class="users-table">
