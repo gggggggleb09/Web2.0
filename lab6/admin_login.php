@@ -3,9 +3,9 @@ session_start();
 
 // Настройки подключения к БД
 $host = 'localhost';
-$dbname = 'web_form_db';
-$username = 'root';
-$password = '';
+$dbname = 'u82378';
+$username = 'u82378';
+$password = '5427077';
 
 $error = '';
 
