@@ -1,43 +1,85 @@
 <?php
-session_start();
+// Файл: admin.php
 
+// Настройки авторизации
+$valid_username = 'admin';
+$valid_password = 'admin123';
 
-$valid_passwords = array (
-    'admin' => '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi' // пароль: admin123
-);
-
-$valid_users = array_keys($valid_passwords);
-
-$user = $_SERVER['PHP_AUTH_USER'] ?? '';
-$pass = $_SERVER['PHP_AUTH_PW'] ?? '';
-
-$authenticated = false;
-
-foreach ($valid_passwords as $username => $password) {
-    if ($user === $username && password_verify($pass, $password)) {
-        $authenticated = true;
-        break;
-    }
-}
-
-if (!$authenticated) {
+// Проверяем, отправлены ли данные авторизации
+if (!isset($_SERVER['PHP_AUTH_USER']) || !isset($_SERVER['PHP_AUTH_PW']) ||
+    $_SERVER['PHP_AUTH_USER'] != $valid_username || $_SERVER['PHP_AUTH_PW'] != $valid_password) {
+    
+    // Отправляем заголовки для запроса авторизации
+    header('HTTP/1.1 401 Unauthorized');
     header('WWW-Authenticate: Basic realm="Admin Panel"');
-    header('HTTP/1.0 401 Unauthorized');
-    echo 'Требуется авторизация для доступа к панели администратора';
+    
+    // Выводим сообщение об ошибке
+    echo '<!DOCTYPE html>
+    <html>
+    <head>
+        <title>Требуется авторизация</title>
+        <meta charset="UTF-8">
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                text-align: center;
+                padding: 50px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+            }
+            .error {
+                background: rgba(255,255,255,0.9);
+                color: #333;
+                padding: 20px;
+                border-radius: 10px;
+                display: inline-block;
+            }
+            .error h2 { margin-top: 0; color: #dc3545; }
+            .error p { margin: 10px 0; }
+            .error code {
+                background: #f4f4f4;
+                padding: 5px 10px;
+                border-radius: 5px;
+                display: inline-block;
+                margin: 5px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="error">
+            <h2>🔐 Требуется авторизация</h2>
+            <p>Для доступа к панели администратора введите логин и пароль.</p>
+            <p><strong>Логин:</strong> <code>admin</code></p>
+            <p><strong>Пароль:</strong> <code>admin123</code></p>
+            <p><small>Если окно авторизации не появилось, проверьте настройки браузера.</small></p>
+            <p><a href="admin.php" style="color: #667eea;">↻ Попробовать снова</a></p>
+        </div>
+    </body>
+    </html>';
     exit;
 }
 
+// Если авторизация прошла успешно, продолжаем работу
+session_start();
+
+// Настройки подключения к БД
 $host = 'localhost';
 $dbname = 'u82378';
 $username = 'u82378';
 $password = '5427077';
 
-$pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
-$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    die("Ошибка подключения к базе данных: " . $e->getMessage());
+}
 
+// Обработка действий
 $action = $_GET['action'] ?? '';
 $user_id = $_GET['id'] ?? 0;
 
+// Удаление пользователя
 if ($action === 'delete' && $user_id) {
     $stmt = $pdo->prepare("DELETE FROM users WHERE id = :id");
     $stmt->execute([':id' => $user_id]);
@@ -45,6 +87,7 @@ if ($action === 'delete' && $user_id) {
     exit;
 }
 
+// Обновление пользователя
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_user'])) {
     $update_id = $_POST['user_id'];
     
@@ -65,6 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_user'])) {
         ':id' => $update_id
     ]);
     
+    // Обновляем языки
     $languages = $_POST['languages'] ?? [];
     $stmt = $pdo->prepare("DELETE FROM user_languages WHERE user_id = :user_id");
     $stmt->execute([':user_id' => $update_id]);
@@ -85,7 +129,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_user'])) {
     exit;
 }
 
+// Получение данных для редактирования
 $edit_user = null;
+$user_languages = [];
 if ($action === 'edit' && $user_id) {
     $stmt = $pdo->prepare("SELECT * FROM users WHERE id = :id");
     $stmt->execute([':id' => $user_id]);
@@ -103,6 +149,7 @@ if ($action === 'edit' && $user_id) {
     }
 }
 
+// Получение статистики по языкам
 $stmt = $pdo->prepare("
     SELECT pl.language_name, COUNT(ul.user_id) as count 
     FROM programming_languages pl
@@ -113,6 +160,7 @@ $stmt = $pdo->prepare("
 $stmt->execute();
 $language_stats = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Получение всех пользователей
 $stmt = $pdo->prepare("
     SELECT u.*, 
            GROUP_CONCAT(pl.language_name SEPARATOR ', ') as languages
@@ -169,6 +217,19 @@ $all_languages = ['Pascal', 'C', 'C++', 'JavaScript', 'PHP', 'Python', 'Java', '
 
         .header h1 {
             font-size: 1.8em;
+        }
+
+        .admin-info {
+            background: rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 10px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .admin-info span {
+            font-weight: bold;
         }
 
         .stats {
@@ -231,8 +292,6 @@ $all_languages = ['Pascal', 'C', 'C++', 'JavaScript', 'PHP', 'Python', 'Java', '
         .users-table {
             width: 100%;
             border-collapse: collapse;
-            overflow-x: auto;
-            display: block;
         }
 
         .users-table th,
@@ -343,8 +402,13 @@ $all_languages = ['Pascal', 'C', 'C++', 'JavaScript', 'PHP', 'Python', 'Java', '
     <div class="container">
         <div class="header">
             <h1>👑 Панель администратора</h1>
-            <div class="stats">
-                Всего пользователей: <span><?php echo count($users); ?></span>
+            <div style="display: flex; gap: 15px;">
+                <div class="stats">
+                    Всего пользователей: <span><?php echo count($users); ?></span>
+                </div>
+                <div class="admin-info">
+                    👤 Администратор
+                </div>
             </div>
         </div>
         
@@ -352,12 +416,13 @@ $all_languages = ['Pascal', 'C', 'C++', 'JavaScript', 'PHP', 'Python', 'Java', '
             <?php if (isset($_GET['message'])): ?>
                 <div class="message message-success">
                     <?php 
-                        if ($_GET['message'] === 'deleted') echo "Пользователь успешно удален!";
-                        if ($_GET['message'] === 'updated') echo "Данные пользователя успешно обновлены!";
+                        if ($_GET['message'] === 'deleted') echo "✅ Пользователь успешно удален!";
+                        if ($_GET['message'] === 'updated') echo "✅ Данные пользователя успешно обновлены!";
                     ?>
                 </div>
             <?php endif; ?>
             
+            <!-- Статистика по языкам -->
             <h2>📊 Статистика по языкам программирования</h2>
             <div class="stats-grid">
                 <?php foreach ($language_stats as $stat): ?>
@@ -368,9 +433,10 @@ $all_languages = ['Pascal', 'C', 'C++', 'JavaScript', 'PHP', 'Python', 'Java', '
                 <?php endforeach; ?>
             </div>
             
+            <!-- Форма редактирования -->
             <?php if ($edit_user): ?>
                 <div class="edit-form">
-                    <h2>✏️ Редактирование пользователя</h2>
+                    <h2>✏️ Редактирование пользователя #<?php echo $edit_user['id']; ?></h2>
                     <form method="POST">
                         <input type="hidden" name="user_id" value="<?php echo $edit_user['id']; ?>">
                         
@@ -413,7 +479,7 @@ $all_languages = ['Pascal', 'C', 'C++', 'JavaScript', 'PHP', 'Python', 'Java', '
                                 <select name="languages[]" multiple>
                                     <?php foreach ($all_languages as $lang): ?>
                                         <option value="<?php echo $lang; ?>" 
-                                            <?php echo (isset($user_languages) && in_array($lang, $user_languages)) ? 'selected' : ''; ?>>
+                                            <?php echo (in_array($lang, $user_languages)) ? 'selected' : ''; ?>>
                                             <?php echo $lang; ?>
                                         </option>
                                     <?php endforeach; ?>
@@ -434,6 +500,7 @@ $all_languages = ['Pascal', 'C', 'C++', 'JavaScript', 'PHP', 'Python', 'Java', '
                 </div>
             <?php endif; ?>
             
+            <!-- Таблица пользователей -->
             <h2>📋 Список пользователей</h2>
             <div style="overflow-x: auto;">
                 <table class="users-table">
