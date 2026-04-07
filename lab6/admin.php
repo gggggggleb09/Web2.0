@@ -456,14 +456,14 @@ $all_languages = ['Pascal', 'C', 'C++', 'JavaScript', 'PHP', 'Python', 'Java', '
 <body>
     <div class="container">
         <div class="header">
-            <h1>👑 Панель администратора</h1>
+            <h1> Панель администратора</h1>
             <div style="display: flex; gap: 15px;">
                 <div class="stats">
                     Всего пользователей: <span><?php echo count($users); ?></span>
                 </div>
                 <div class="admin-info">
-                    👤 <?php echo htmlspecialchars($_SESSION['admin_login'] ?? 'Admin'); ?>
-                    <a href="?action=logout" class="btn-logout">🚪 Выйти</a>
+                     <?php echo htmlspecialchars($_SESSION['admin_login'] ?? 'Admin'); ?>
+                    <a href="?action=logout" class="btn-logout"> Выйти</a>
                 </div>
             </div>
         </div>
@@ -471,15 +471,15 @@ $all_languages = ['Pascal', 'C', 'C++', 'JavaScript', 'PHP', 'Python', 'Java', '
         <div class="content">
             <?php if (isset($_GET['message'])): ?>
                 <?php if ($_GET['message'] === 'deleted'): ?>
-                    <div class="message message-success">✅ Пользователь успешно удален!</div>
+                    <div class="message message-success"> Пользователь успешно удален!</div>
                 <?php elseif ($_GET['message'] === 'updated'): ?>
-                    <div class="message message-success">✅ Данные пользователя успешно обновлены!</div>
+                    <div class="message message-success"> Данные пользователя успешно обновлены!</div>
                 <?php elseif ($_GET['message'] === 'cant_delete_self'): ?>
-                    <div class="message message-error">⚠️ Вы не можете удалить самого себя!</div>
+                    <div class="message message-error"> Вы не можете удалить самого себя!</div>
                 <?php endif; ?>
             <?php endif; ?>
         
-            <h2>📊 Статистика по языкам программирования</h2>
+            <h2> Статистика по языкам программирования</h2>
             <div class="stats-grid">
                 <?php foreach ($language_stats as $stat): ?>
                     <div class="stat-card">
@@ -491,7 +491,7 @@ $all_languages = ['Pascal', 'C', 'C++', 'JavaScript', 'PHP', 'Python', 'Java', '
        
             <?php if ($edit_user): ?>
                 <div class="edit-form">
-                    <h2>✏️ Редактирование пользователя #<?php echo $edit_user['id']; ?></h2>
+                    <h2> Редактирование пользователя #<?php echo $edit_user['id']; ?></h2>
                     <form method="POST">
                         <input type="hidden" name="user_id" value="<?php echo $edit_user['id']; ?>">
                         
@@ -548,14 +548,14 @@ $all_languages = ['Pascal', 'C', 'C++', 'JavaScript', 'PHP', 'Python', 'Java', '
                         </div>
                         
                         <div style="display: flex; gap: 10px;">
-                            <button type="submit" name="update_user" class="btn-save">💾 Сохранить</button>
-                            <a href="admin.php" class="btn-back">↩️ Назад</a>
+                            <button type="submit" name="update_user" class="btn-save"> Сохранить</button>
+                            <a href="admin.php" class="btn-back"> Назад</a>
                         </div>
                     </form>
                 </div>
             <?php endif; ?>
  
-            <h2>📋 Список пользователей</h2>
+            <h2> Список пользователей</h2>
             <div style="overflow-x: auto;">
                 <table class="users-table">
                     <thead>
@@ -592,7 +592,7 @@ $all_languages = ['Pascal', 'C', 'C++', 'JavaScript', 'PHP', 'Python', 'Java', '
                                     <?php if ($user['id'] != $_SESSION['admin_id']): ?>
                                         <a href="?action=delete&id=<?php echo $user['id']; ?>" 
                                            class="btn-delete" 
-                                           onclick="return confirm('Вы уверены, что хотите удалить этого пользователя?')">🗑️ Удалить</a>
+                                           onclick="return confirm('Вы уверены, что хотите удалить этого пользователя?')"> Удалить</a>
                                     <?php else: ?>
                                         <span style="color: #999; font-size: 0.85em;">(Вы)</span>
                                     <?php endif; ?>
