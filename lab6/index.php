@@ -302,7 +302,7 @@ require_once 'form_handler.php';
             Привет, <?php echo htmlspecialchars($_SESSION['login']); ?>
             <a href="?action=logout">Выйти</a>
         <?php endif; ?>
-        <a href="admin.php" style="margin-left: 15px; background: rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 5px; text-decoration: none; color: white;">🔐 Админ-панель</a>
+        <a href="admin.php" style="margin-left: 15px; background: rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 5px; text-decoration: none; color: white;"> Админ-панель</a>
     </div>
 </div>
         
@@ -316,7 +316,6 @@ require_once 'form_handler.php';
             <?php endif; ?>
             
             <?php if (!isset($_SESSION['authenticated']) || !$_SESSION['authenticated']): ?>
-                <!-- Вкладки для неавторизованных пользователей -->
                 <div class="tabs">
                     <button class="tab active" onclick="switchTab('register')">Регистрация</button>
                     <button class="tab" onclick="switchTab('login')">Вход</button>
